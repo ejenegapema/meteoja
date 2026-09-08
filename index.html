@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ECMWF AIFS Weather Forecast</title>
+<title>Open-Meteo Weather Model Comparison</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
@@ -31,7 +31,7 @@ body {
 }
 
 .header-info h1 { margin: 0 0 10px; color: #f1f5f9; font-size: 32px; }
-.info-line { color: #cbd5e1; font-size: 18px; }
+.info-line { color: #cbd5e1; font-size: 16px; }
 
 .message {
     display: none;
@@ -75,7 +75,7 @@ body {
 }
 
 .form-input { width: 120px; }
-.form-select { min-width: 200px; }
+.form-select { min-width: 220px; }
 
 .submit-btn {
     height: 42px;
@@ -138,9 +138,18 @@ body {
     font: 12px monospace;
     white-space: pre-wrap;
     word-break: break-word;
-    max-height: 320px;
+    max-height: 300px;
     overflow: auto;
 }
+
+.source-note {
+    text-align: center;
+    margin-top: 10px;
+    color: #64748b;
+    font-size: 12px;
+}
+
+.source-note a { color: #60a5fa; }
 </style>
 </head>
 
@@ -149,8 +158,8 @@ body {
 <div class="container">
 
     <div class="header-info">
-        <h1>ECMWF AIFS Weather Forecast</h1>
-        <div class="info-line">Model Run - 0Z, 6Z, 12Z, 18Z</div>
+        <h1>Open-Meteo Weather Model Comparison</h1>
+        <div class="info-line">ECMWF IFS · GFS · ICON · NCEP HGEFS (AI Ensemble Mean)</div>
     </div>
 
     <div id="errorMessage" class="message" role="alert"></div>
@@ -162,22 +171,23 @@ body {
 
             <div class="form-group">
                 <label class="form-label" for="latInput">Latitude</label>
-                <input id="latInput" class="form-input" type="number" value="42.5" step="0.1" min="-90" max="90">
+                <input id="latInput" class="form-input" type="number" value="52.52" step="0.01" min="-90" max="90">
             </div>
 
             <div class="form-group">
                 <label class="form-label" for="lonInput">Longitude</label>
-                <input id="lonInput" class="form-input" type="number" value="42" step="0.1" min="-180" max="180">
+                <input id="lonInput" class="form-input" type="number" value="13.41" step="0.01" min="-180" max="180">
             </div>
 
             <div class="form-group">
                 <label class="form-label" for="variableSelect">Weather Variable</label>
                 <select id="variableSelect" class="form-select">
-                    <option value="7">T2m</option>
-                    <option value="0">T850</option>
-                    <option value="4">Z500</option>
-                    <option value="2">MSLP</option>
-                    <option value="13">Precipitation</option>
+                    <option value="temperature_2m">T2m (2m Temperature)</option>
+                    <option value="temperature_925hPa" selected>T925 (925 hPa Temperature)</option>
+                    <option value="temperature_850hPa">T850 (850 hPa Temperature)</option>
+                    <option value="geopotential_height_500hPa">Z500 (500 hPa Geopotential Height)</option>
+                    <option value="pressure_msl">MSLP (Mean Sea Level Pressure)</option>
+                    <option value="precipitation">Precipitation</option>
                 </select>
             </div>
 
@@ -195,6 +205,10 @@ body {
         <div id="debugBox" class="debug"></div>
     </div>
 
+    <div class="source-note">
+        Data: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo.com</a> — free weather API, CC BY 4.0
+    </div>
+
 </div>
 
 <script>
@@ -205,73 +219,28 @@ let chart = null;
    CONFIG
 ========================================================= */
 
-const RUNS = [0, 6, 12, 18];
-
-const COLORS = { 0: '#53a0e5', 6: '#ffea00', 12: '#1cc412', 18: '#ff0000' };
-
-const VARIABLE_CONFIG = {
-    0:  { name: 'T850',          unit: '°C',  roundStep: 5  },
-    2:  { name: 'MSLP',          unit: 'hPa', roundStep: 10 },
-    4:  { name: 'Z500',          unit: 'dm',  roundStep: 50 },
-    7:  { name: 'T2m',           unit: '°C',  roundStep: 5  },
-    13: { name: 'Precipitation', unit: 'mm',  roundStep: 5  }
-};
+const BASE_URL = 'https://api.open-meteo.com/v1/forecast';
 
 /*
-    Multiple extraction strategies, tried in order.
-    meteociel.fr does not send CORS headers for third-party
-    origins, so a plain fetch() fails ("Failed to fetch").
-    We fall back through several public proxies/readers so
-    that a single dead/rate-limited service doesn't break
-    the whole tool. For production, replace these with a
-    server you control.
+    Each "model" plays the role the four run-times (0Z/6Z/12Z/18Z)
+    used to play in the old meteociel version: one colored line
+    per source, all sharing the same variable/location.
 */
-const PROXIES = [
-
-    {
-        name: 'direct',
-        build: (url) => url
-    },
-
-    {
-        name: 'allorigins-raw',
-        build: (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`
-    },
-
-    {
-        name: 'allorigins-get',
-        build: (url) => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
-        jsonWrapped: true
-    },
-
-    {
-        name: 'corsproxy.io',
-        build: (url) => `https://corsproxy.io/?url=${encodeURIComponent(url)}`
-    },
-
-    {
-        name: 'codetabs',
-        build: (url) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`
-    },
-
-    {
-        name: 'thingproxy',
-        build: (url) => `https://thingproxy.freeboard.io/fetch/${url}`
-    },
-
-    {
-        name: 'yacdn',
-        build: (url) => `https://yacdn.org/proxy/${url}`
-    },
-
-    {
-        name: 'jina-reader',
-        build: (url) => `https://r.jina.ai/${url}`
-    }
-
+const MODELS = [
+    { id: 'ecmwf_ifs025',                label: 'ECMWF IFS',        color: '#53a0e5' },
+    { id: 'gfs_seamless',                label: 'GFS',               color: '#ffea00' },
+    { id: 'icon_seamless',               label: 'ICON',              color: '#1cc412' },
+    { id: 'ncep_hgefs025_ensemble_mean', label: 'NCEP HGEFS (AI Ens. Mean)', color: '#ff0000' }
 ];
 
-const PROXY_TIMEOUT_MS = 15000;
+const VARIABLE_CONFIG = {
+    temperature_2m:               { name: 'T2m',           unit: '°C',  roundStep: 5  },
+    temperature_925hPa:           { name: 'T925',          unit: '°C',  roundStep: 5  },
+    temperature_850hPa:           { name: 'T850',          unit: '°C',  roundStep: 5  },
+    geopotential_height_500hPa:   { name: 'Z500',          unit: 'm',   roundStep: 50 },
+    pressure_msl:                 { name: 'MSLP',          unit: 'hPa', roundStep: 5  },
+    precipitation:                { name: 'Precipitation', unit: 'mm',  roundStep: 1  }
+};
 
 
 /* =========================================================
@@ -320,259 +289,171 @@ function debug(text) {
 
 
 /* =========================================================
-   URL
+   URL BUILDING
 ========================================================= */
 
-function buildUrl(lat, lon, mode, run) {
+function buildUrl(lat, lon, variable, modelIds) {
 
     const params = new URLSearchParams();
 
-    params.set('x', '0');
-    params.set('y', '0');
-    params.set('lat', lat);
-    params.set('lon', lon);
-    params.set('run', run);
-    params.set('ext', '1');
-    params.set('mode', mode);
-    params.set('sort', '0');
-    params.set('aifs', '1');
+    params.set('latitude', lat);
+    params.set('longitude', lon);
+    params.set('hourly', variable);
+    params.set('models', modelIds.join(','));
+    params.set('timezone', 'UTC');
 
-    return 'https://www.meteociel.fr/modeles/ecmwfens_table.php?' + params.toString();
+    return `${BASE_URL}?${params.toString()}`;
 
 }
 
 
 /* =========================================================
-   DATE / NUMBER PARSERS
+   FETCH: COMBINED (single request, all models)
 ========================================================= */
 
-function parseDate(text) {
+async function fetchCombined(lat, lon, variable, logs) {
 
-    if (!text) return null;
+    const modelIds = MODELS.map(m => m.id);
+    const url = buildUrl(lat, lon, variable, modelIds);
 
-    const value = text.replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
+    logs.push(`[combined] GET ${url}`);
 
-    const match = value.match(/(\d{4})-(\d{2})-(\d{2})\s+(\d{1,2})Z/i);
+    const response = await fetch(url, { method: 'GET', cache: 'no-store' });
+    const json = await response.json().catch(() => null);
 
-    if (!match) return null;
+    if (!response.ok || !json || json.error) {
+        const reason = json?.reason || `HTTP ${response.status} ${response.statusText}`;
+        throw new Error(`Combined request failed: ${reason}`);
+    }
 
-    return `${match[1]}-${match[2]}-${match[3]} ${String(match[4]).padStart(2, '0')}:00`;
+    const times = json.hourly?.time;
 
-}
+    if (!Array.isArray(times)) {
+        throw new Error('Combined request: missing hourly.time in response');
+    }
 
-function parseNumber(text) {
+    const results = [];
 
-    if (text === null || text === undefined) return null;
+    for (const model of MODELS) {
 
-    let value = String(text).replace(/\u00a0/g, ' ').trim();
+        const key = `${variable}_${model.id}`;
+        const values = json.hourly[key];
 
-    if (!value) return null;
+        if (Array.isArray(values) && values.some(v => v !== null && v !== undefined)) {
+            results.push({ ...model, times, values });
+            logs.push(`[combined] ${model.label}: OK — ${values.length} points`);
+        } else {
+            logs.push(`[combined] ${model.label}: no usable data (key "${key}")`);
+        }
 
-    value = value.replace(',', '.').match(/[-+]?\d*\.?\d+/);
+    }
 
-    if (!value) return null;
+    if (!results.length) {
+        throw new Error('Combined request returned no usable data for any model');
+    }
 
-    const number = Number(value[0]);
-
-    return Number.isFinite(number) ? number : null;
+    return results;
 
 }
 
 
 /* =========================================================
-   METEOCIEL TABLE PARSER
+   FETCH: PER-MODEL FALLBACK
 ========================================================= */
 
-function parseTable(html, run) {
+async function fetchIndividual(lat, lon, variable, logs) {
 
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
-    const tables = Array.from(doc.querySelectorAll('table'));
+    const results = [];
 
-    console.log(`${run}Z: tables =`, tables.length);
+    for (const model of MODELS) {
 
-    for (let tableNo = 0; tableNo < tables.length; tableNo++) {
+        const url = buildUrl(lat, lon, variable, [model.id]);
 
-        const table = tables[tableNo];
-        const rows = Array.from(table.querySelectorAll('tr'));
-
-        if (!rows.length) continue;
-
-        let headerIndex = -1;
-        let dateIndex = -1;
-        let detIndex = -1;
-
-        for (let r = 0; r < rows.length; r++) {
-
-            const cells = Array.from(rows[r].querySelectorAll('th,td'));
-
-            const texts = cells.map(cell =>
-                cell.textContent.replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim().toUpperCase()
-            );
-
-            const d = texts.findIndex(x => x === 'DATE' || x.includes('DATE'));
-            const det = texts.findIndex(x => x === 'DET' || x.startsWith('DET '));
-
-            if (d !== -1 && det !== -1) {
-                headerIndex = r;
-                dateIndex = d;
-                detIndex = det;
-                break;
-            }
-
-        }
-
-        if (headerIndex === -1) continue;
-
-        console.log(`${run}Z: table=${tableNo}`, `date=${dateIndex}`, `det=${detIndex}`);
-
-        const result = [];
-
-        for (let r = headerIndex + 1; r < rows.length; r++) {
-
-            const cells = Array.from(rows[r].querySelectorAll('th,td'));
-
-            if (!cells.length) continue;
-
-            const texts = cells.map(cell =>
-                cell.textContent.replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim()
-            );
-
-            let foundDate = null;
-
-            for (const text of texts) {
-                const parsed = parseDate(text);
-                if (parsed) { foundDate = parsed; break; }
-            }
-
-            if (!foundDate) continue;
-
-            let detValue = null;
-
-            if (detIndex >= 0 && detIndex < texts.length) {
-                detValue = parseNumber(texts[detIndex]);
-            }
-
-            if (detValue === null) {
-                for (let c = detIndex; c < texts.length; c++) {
-                    const candidate = parseNumber(texts[c]);
-                    if (candidate !== null) { detValue = candidate; break; }
-                }
-            }
-
-            if (detValue === null) continue;
-
-            result.push({ date: foundDate, value: detValue });
-
-        }
-
-        if (result.length) {
-
-            const map = new Map();
-            for (const item of result) map.set(item.date, item.value);
-
-            return Array.from(map, ([date, value]) => ({ date, value }));
-
-        }
-
-    }
-
-    /* Fallback: parse page text directly */
-
-    const text = doc.body?.innerText || '';
-    const lines = text.split(/\n+/);
-    const fallback = [];
-
-    for (const lineRaw of lines) {
-
-        const line = lineRaw.trim();
-
-        const match = line.match(/^(\d{4}-\d{2}-\d{2})\s+(\d{1,2})Z(?:\s+)([-+]?\d*\.?\d+)/i);
-
-        if (!match) continue;
-
-        const date = `${match[1]} ${String(match[2]).padStart(2, '0')}:00`;
-        const value = Number(match[3]);
-
-        if (Number.isFinite(value)) fallback.push({ date, value });
-
-    }
-
-    console.log(`${run}Z fallback =`, fallback.length);
-
-    return fallback;
-
-}
-
-
-/* =========================================================
-   MULTI-STRATEGY FETCH
-========================================================= */
-
-async function fetchWithTimeout(url, ms) {
-
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), ms);
-
-    try {
-        return await fetch(url, { method: 'GET', cache: 'no-store', signal: controller.signal });
-    } finally {
-        clearTimeout(timer);
-    }
-
-}
-
-async function fetchViaAllStrategies(url, run, logs) {
-
-    const attempts = [];
-
-    for (const proxy of PROXIES) {
-
-        const targetUrl = proxy.build(url);
+        logs.push(`[individual] GET ${url}`);
 
         try {
 
-            logs.push(`${run}Z [${proxy.name}] → ${targetUrl}`);
+            const response = await fetch(url, { method: 'GET', cache: 'no-store' });
+            const json = await response.json().catch(() => null);
 
-            const response = await fetchWithTimeout(targetUrl, PROXY_TIMEOUT_MS);
-
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status} ${response.statusText}`);
+            if (!response.ok || !json || json.error) {
+                const reason = json?.reason || `HTTP ${response.status} ${response.statusText}`;
+                throw new Error(reason);
             }
 
-            let html;
+            const times = json.hourly?.time;
+            const values = json.hourly?.[variable];
 
-            if (proxy.jsonWrapped) {
-                const json = await response.json();
-                html = json?.contents ?? '';
-            } else {
-                html = await response.text();
+            if (!Array.isArray(times) || !Array.isArray(values)) {
+                throw new Error('Missing hourly time/value arrays');
             }
 
-            if (!html || html.length < 50) {
-                throw new Error('Empty or too-short response');
+            if (!values.some(v => v !== null && v !== undefined)) {
+                throw new Error('All values null for this model/variable combination');
             }
 
-            logs.push(`${run}Z [${proxy.name}] OK — ${html.length} bytes`);
+            results.push({ ...model, times, values });
 
-            attempts.push({ name: proxy.name, ok: true });
-
-            return { html, proxyUsed: proxy.name, attempts };
+            logs.push(`[individual] ${model.label}: OK — ${values.length} points`);
 
         } catch (error) {
 
-            logs.push(`${run}Z [${proxy.name}] FAILED — ${error.message}`);
+            logs.push(`[individual] ${model.label}: FAILED — ${error.message}`);
 
-            attempts.push({ name: proxy.name, ok: false, error: error.message });
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 150));
+
+    }
+
+    return results;
+
+}
+
+
+/* =========================================================
+   MERGE MULTIPLE MODEL SERIES INTO ONE TIMELINE
+========================================================= */
+
+function mergeSeries(seriesList) {
+
+    const dateSet = new Set();
+
+    for (const series of seriesList) {
+        for (const t of series.times) {
+            dateSet.add(t);
+        }
+    }
+
+    const dates = Array.from(dateSet).sort();
+
+    const merged = {};
+
+    for (const date of dates) {
+        merged[date] = {};
+    }
+
+    for (const series of seriesList) {
+
+        const lookup = new Map();
+
+        series.times.forEach((t, i) => {
+            lookup.set(t, series.values[i]);
+        });
+
+        for (const date of dates) {
+
+            const value = lookup.has(date) ? lookup.get(date) : null;
+
+            merged[date][series.id] = (value === null || value === undefined)
+                ? null
+                : Number(value);
 
         }
 
     }
 
-    throw new Error(
-        `All ${PROXIES.length} extraction methods failed for ${run}Z ` +
-        `(${attempts.map(a => a.name).join(', ')})`
-    );
+    return { dates, merged };
 
 }
 
@@ -589,8 +470,8 @@ async function fetchData() {
     const lat = Number(latRaw);
     const lon = Number(lonRaw);
 
-    const mode = document.getElementById('variableSelect').value;
-    const config = VARIABLE_CONFIG[mode];
+    const variable = document.getElementById('variableSelect').value;
+    const config = VARIABLE_CONFIG[variable];
 
     const button = document.getElementById('fetchBtn');
     const loading = document.getElementById('chartLoading');
@@ -614,91 +495,53 @@ async function fetchData() {
 
     debug('');
 
-    let logs = [];
-    const runData = {};
-    const dates = new Set();
-    const proxySummary = {};
-    let successfulRuns = 0;
+    const logs = [];
 
     try {
 
-        for (const run of RUNS) {
+        setStatus('Fetching combined request (all models)...');
 
-            const url = buildUrl(lat, lon, mode, run);
+        let results;
 
-            setStatus(`Fetching ${run}Z (trying ${PROXIES.length} methods)...`);
+        try {
 
-            try {
+            results = await fetchCombined(lat, lon, variable, logs);
 
-                const { html, proxyUsed } = await fetchViaAllStrategies(url, run, logs);
+        } catch (combinedError) {
 
-                proxySummary[run] = proxyUsed;
+            logs.push(`Combined attempt failed: ${combinedError.message}`);
+            logs.push('Falling back to individual per-model requests...');
 
-                const parsed = parseTable(html, run);
+            setStatus('Combined request failed — retrying per model...');
 
-                logs.push(`${run}Z parsed via [${proxyUsed}]: ${parsed.length} points`);
-
-                if (parsed.length > 0) {
-
-                    successfulRuns++;
-                    runData[run] = {};
-
-                    for (const item of parsed) {
-                        runData[run][item.date] = item.value;
-                        dates.add(item.date);
-                    }
-
-                } else {
-
-                    logs.push(`${run}Z: fetched OK but no rows parsed (page format may have changed)`);
-
-                }
-
-            } catch (error) {
-
-                console.error(`${run}Z`, error);
-                logs.push(`${run}Z GIVING UP: ${error.message}`);
-
-            }
-
-            await new Promise(resolve => setTimeout(resolve, 500));
+            results = await fetchIndividual(lat, lon, variable, logs);
 
         }
 
-        debug(logs.join('\n\n'));
+        debug(logs.join('\n'));
 
-        if (!dates.size) {
-            throw new Error('No data could be extracted from Meteociel via any method.');
+        if (!results.length) {
+            throw new Error('No model returned usable data for this variable/location.');
         }
 
-        const merged = {};
+        const { dates, merged } = mergeSeries(results);
 
-        for (const date of dates) {
-            merged[date] = {
-                points_0:  runData[0]?.[date]  ?? null,
-                points_6:  runData[6]?.[date]  ?? null,
-                points_12: runData[12]?.[date] ?? null,
-                points_18: runData[18]?.[date] ?? null
-            };
-        }
+        updateChart(dates, merged, results, config, lat, lon);
 
-        updateChart(merged, config, lat, lon);
+        const successfulModels = results.map(r => r.label).join(', ');
 
-        const proxyNote = Object.entries(proxySummary)
-            .map(([run, name]) => `${run}Z via ${name}`)
-            .join(', ');
-
-        if (successfulRuns === RUNS.length) {
-            showSuccess(`${successfulRuns}/${RUNS.length} runs loaded — ${dates.size} timestamps (${proxyNote})`);
+        if (results.length === MODELS.length) {
+            showSuccess(`${results.length}/${MODELS.length} models loaded — ${dates.length} timestamps (${successfulModels})`);
         } else {
-            showWarning(`Only ${successfulRuns}/${RUNS.length} runs loaded — ${dates.size} timestamps (${proxyNote || 'no successful proxy'})`);
+            showWarning(`Only ${results.length}/${MODELS.length} models loaded — ${dates.length} timestamps (${successfulModels})`);
         }
 
-        setStatus(`${dates.size} forecast timestamps`);
+        setStatus(`${dates.length} forecast timestamps`);
 
     } catch (error) {
 
         console.error(error);
+        debug(logs.join('\n'));
         showError(error.message);
         setStatus('Failed');
 
@@ -716,18 +559,29 @@ async function fetchData() {
    CHART
 ========================================================= */
 
-function updateChart(data, config, lat, lon) {
+function formatLabel(isoTime) {
 
-    const dates = Object.keys(data).sort();
+    // isoTime looks like "2026-09-08T00:00"
+    const [datePart, timePart] = isoTime.split('T');
+    const [, month, day] = datePart.split('-');
+    const hour = timePart.split(':')[0];
+
+    return `${day}.${month} ${hour}z`;
+
+}
+
+function updateChart(dates, merged, results, config, lat, lon) {
+
     if (!dates.length) return;
 
     let allValues = [];
 
-    for (const run of RUNS) {
-        const key = `points_${run}`;
+    for (const series of results) {
         for (const date of dates) {
-            const value = data[date][key];
-            if (value !== null && Number.isFinite(value)) allValues.push(value);
+            const value = merged[date][series.id];
+            if (value !== null && Number.isFinite(value)) {
+                allValues.push(value);
+            }
         }
     }
 
@@ -744,32 +598,25 @@ function updateChart(data, config, lat, lon) {
 
     if (config.name === 'Precipitation' && yMin > 0) yMin = 0;
 
-    const labels = dates.map(date => {
-        const parts = date.split(' ');
-        const d = parts[0].split('-');
-        const hour = parts[1].split(':')[0];
-        return `${d[2]}.${d[1]} ${hour}z`;
-    });
+    const labels = dates.map(formatLabel);
 
-    const datasets = [];
+    const datasets = results.map(series => ({
+        label: series.label,
+        data: dates.map(date => merged[date][series.id]),
+        borderColor: series.color,
+        backgroundColor: series.color,
+        borderWidth: 2,
+        pointRadius: 2,
+        pointHoverRadius: 4,
+        tension: 0,
+        spanGaps: true,
+        fill: false
+    }));
 
-    for (const run of RUNS) {
-        const key = `points_${run}`;
-        datasets.push({
-            label: `${run}Z Run`,
-            data: dates.map(date => data[date][key]),
-            borderColor: COLORS[run],
-            backgroundColor: COLORS[run],
-            borderWidth: 2,
-            pointRadius: 2,
-            pointHoverRadius: 4,
-            tension: 0,
-            spanGaps: true,
-            fill: false
-        });
+    if (chart) {
+        chart.destroy();
+        chart = null;
     }
-
-    if (chart) { chart.destroy(); chart = null; }
 
     chart = new Chart(document.getElementById('forecastChart').getContext('2d'), {
         type: 'line',
@@ -852,7 +699,7 @@ document.addEventListener('DOMContentLoaded', function() {
             maintainAspectRatio: false,
             plugins: {
                 legend: { display: false },
-                title: { display: true, text: 'Click "Update" to load ECMWF AIFS data', color: '#cbd5e1' }
+                title: { display: true, text: 'Click "Update" to load Open-Meteo forecast data', color: '#cbd5e1' }
             },
             scales: {
                 x: { ticks: { color: '#cbd5e1' } },
