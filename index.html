@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ECMWF AIFS Weather Forecast</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/2.1.0/chartjs-plugin-annotation.min.js"></script>
+<style>
+* { box-sizing: border-box; }
+body { 
+    margin: 0; 
+    padding: 0; 
+    font-family: 'Inter', sans-serif; 
+    background: #0f172a; 
+    color: #e2e8f0;
+}
+.container { 
+    max-width: 1200px; 
+    margin: 0 auto; 
+    padding: 20px;
+}
+.header-info { 
+    text-align: center; 
+    margin-bottom: 30px; 
+    padding: 20px; 
+    background: #1e293b; 
+    border-radius: 12px;
+}
+.header-info h1 { 
+    color: #f1f5f9; 
+    font-weight: 700; 
+    margin: 0 0 10px 0; 
+    font-size: 32px;
+}
+.header-info .info-line { 
+    color: #cbd5e1; 
+    font-size: 18px; 
+    font-weight: 500; 
+    margin: 5px 0;
+}
+.error-message { 
+    color: #ef4444; 
+    padding: 12px; 
+    background: #2e1f1f; 
+    border: 1px solid #7f1d1d; 
+    border-radius: 8px; 
+    margin-bottom: 20px; 
+    font-size: 15px; 
+    font-weight: 500; 
+    text-align: center; 
+    width: 100%; 
+    display: none;
+}
+.warning-message { 
+    color: #f59e0b; 
+    padding: 12px; 
+    background: #2e2410; 
+    border: 1px solid #78350f; 
+    border-radius: 8px; 
+    margin-bottom: 20px; 
+    font-size: 14px; 
+    text-align: center; 
+    width: 100%; 
+    display: none;
+}
+.success-message { 
+    color: #10b981; 
+    padding: 12px; 
+    background: #1a2e26; 
+    border: 1px solid #064e3b; 
+    border-radius: 8px; 
+    margin-bottom: 20px; 
+    font-size: 14px; 
+    text-align: center; 
+    width: 100%; 
+    display: none;
+}
+.form-container { 
+    background: #1e293b; 
+    border-radius: 12px; 
+    padding: 20px; 
+    margin-bottom: 20px; 
+    width: 100%;
+}
+.form-grid { 
+    display: flex; 
+    flex-wrap: wrap; 
+    gap: 15px; 
+    justify-content: center; 
+    align-items: center;
+}
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.form-label {
+    color: #cbd5e1;
+    font-size: 14px;
+    font-weight: 500;
+}
+.form-select {
+    background: #0f172a;
+    color: #e2e8f0;
+    border: 1px solid #475569;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    min-width: 200px;
+    height: 42px;
+}
+.form-select:focus {
+    outline: none;
+    border-color: #3b82f6;
+}
+.form-select option {
+    background: #1e293b;
+    color: #e2e8f0;
+}
+.form-input {
+    background: #0f172a;
+    color: #e2e8f0;
+    border: 1px solid #475569;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-family: 'Inter', sans-serif;
+    width: 120px;
+    height: 42px;
+}
+.form-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+}
+.form-input::placeholder {
+    color: #64748b;
+}
+.submit-btn { 
+    background: #3b82f6; 
+    color: #ffffff; 
+    border: none; 
+    padding: 10px 24px; 
+    border-radius: 9px; 
+    font-size: 16px; 
+    font-weight: 500; 
+    cursor: pointer; 
+    transition: background-color 0.2s; 
+    height: 42px;
+}
+.submit-btn:hover { 
+    background: #2563eb;
+}
+.submit-btn:disabled {
+    background: #475569;
+    cursor: not-allowed;
+}
+.chart-container { 
+    background: #1e293b; 
+    border-radius: 12px; 
+    padding: 20px; 
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); 
+    width: 100%; 
+    position: relative;
+}
+.chart-wrapper { 
+    position: relative; 
+    height: 400px;
+}
+.chart-loading { 
+    position: absolute; 
+    top: 0; 
+    left: 0; 
+    right: 0; 
+    bottom: 0; 
+    display: none; 
+    justify-content: center; 
+    align-items: center; 
+    background: rgba(30, 41, 59, 0.8); 
+    border-radius: 12px; 
+    z-index: 10;
+}
+.chart-loading.active { 
+    display: flex;
+}
+.chart-spinner { 
+    border: 4px solid rgba(59, 130, 246, 0.1); 
+    border-radius: 50%; 
+    border-top: 4px solid #3b82f6; 
+    width: 60px; 
+    height: 60px; 
+    animation: spin 1s linear infinite;
+}
+@keyframes spin { 
+    0% { transform: rotate(0deg); } 
+    100% { transform: rotate(360deg); }
+}
+.status-text {
+    color: #cbd5e1;
+    font-size: 14px;
+    text-align: center;
+    margin-top: 10px;
+}
+</style>
+</head>
+<body>
+    <div class="container">
+        <div class="header-info">
+            <h1>ECMWF AIFS Weather Forecast</h1>
+            <div class="info-line">Model Run - 0Z, 6Z, 12Z, 18Z</div>
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+        <div class="warning-message" id="warningMessage"></div>
+        <div class="success-message" id="successMessage"></div>
+
+        <div class="form-container">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label" for="latInput">Latitude</label>
+                    <input type="number" class="form-input" id="latInput" placeholder="42.5" value="42.5" step="0.1" min="-90" max="90">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="lonInput">Longitude</label>
+                    <input type="number" class="form-input" id="lonInput" placeholder="42.0" value="42.0" step="0.1" min="-180" max="180">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="variableSelect">Weather Variable</label>
+                    <select class="form-select" id="variableSelect">
+                        <option value="7">T2m</option>
+                        <option value="0">T850</option>
+                        <option value="4">Z500</option>
+                        <option value="2">MSLP</option>
+                        <option value="13">Precipitation</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" style="opacity: 0;">Action</label>
+                    <button class="submit-btn" onclick="fetchData()" id="fetchBtn">Update</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <div class="chart-loading" id="chartLoading">
+                <div class="chart-spinner"></div>
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="forecastChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let chart = null;
+
+        const colors = {
+            0: { line: '#53a0e5', bg: 'rgba(59, 130, 246, 0.1)' },
+            6: { line: '#ffea00', bg: 'rgba(16, 185, 129, 0.1)' },
+            12: { line: '#1cc412', bg: 'rgba(245, 158, 11, 0.1)' },
+            18: { line: '#ff0000', bg: 'rgba(236, 72, 153, 0.1)' }
+        };
+
+        const variableConfig = {
+            '13': { 
+                name: 'Precipitation', 
+                unit: 'mm',
+                roundStep: 50
+            },
+            '0': { 
+                name: 'T850', 
+                unit: '°C',
+                roundStep: 5
+            },
+            '2': { 
+                name: 'MSLP', 
+                unit: 'hPa',
+                roundStep: 10
+            },
+            '7': { 
+                name: 'T2m', 
+                unit: '°C',
+                roundStep: 5
+            },
+            '4': { 
+                name: 'Z500', 
+                unit: 'dm',
+                roundStep: 50
+            }
+        };
+
+        const PROXIES = [
+            'https://corsproxy.io/?'
+        ];
+
+        function showError(message) {
+            const errorEl = document.getElementById('errorMessage');
+            errorEl.textContent = message;
+            errorEl.style.display = 'block';
+        }
+
+        function hideError() {
+            document.getElementById('errorMessage').style.display = 'none';
+        }
+
+        function showWarning(message) {
+            const warningEl = document.getElementById('warningMessage');
+            warningEl.textContent = message;
+            warningEl.style.display = 'block';
+        }
+
+        function hideWarning() {
+            document.getElementById('warningMessage').style.display = 'none';
+        }
+
+        function showSuccess(message) {
+            const successEl = document.getElementById('successMessage');
+            successEl.textContent = message;
+            successEl.style.display = 'block';
+        }
+
+        function hideSuccess() {
+            document.getElementById('successMessage').style.display = 'none';
+        }
+
+        function setStatus(message) {
+            document.getElementById('statusText').textContent = message;
+        }
+
+        function roundToStep(value, step, roundUp = false) {
+            if (roundUp) {
+                return Math.ceil(value / step) * step;
+            } else {
+                return Math.floor(value / step) * step;
+            }
+        }
+
+        function parseTable(html, runNumber) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const tables = doc.querySelectorAll('table');
+            
+            for (let tableIdx = 0; tableIdx < tables.length; tableIdx++) {
+                const table = tables[tableIdx];
+                const headerRow = table.querySelector('tr');
+                if (!headerRow) continue;
+                
+                const headers = Array.from(headerRow.querySelectorAll('th, td')).map(th => th.textContent.trim());
+                
+                const dateIndex = headers.findIndex(h => h.toUpperCase() === 'DATE');
+                const detIndex = headers.findIndex(h => h.toUpperCase() === 'DET');
+                
+                if (dateIndex === -1 || detIndex === -1) {
+                    continue;
+                }
+                
+                const data = [];
+                const rows = table.querySelectorAll('tr');
+                
+                for (let i = 1; i < rows.length; i++) {
+                    const cells = rows[i].querySelectorAll('td');
+                    if (cells.length <= Math.max(dateIndex, detIndex)) continue;
+                    
+                    const dateText = cells[dateIndex].textContent.trim();
+                    const detText = cells[detIndex].textContent.trim().replace(/\s+/g, '');
+                    
+                    const match = dateText.match(/(\d{4})-(\d{2})-(\d{2})\s+(\d{2})Z/);
+                    if (match) {
+                        const dateKey = `${match[1]}-${match[2]}-${match[3]} ${match[4]}:00`;
+                        const detValue = parseFloat(detText);
+                        if (!isNaN(detValue)) {
+                            data.push({ date: dateKey, value: detValue });
+                        }
+                    }
+                }
+                
+                if (data.length > 0) {
+                    return data;
+                }
+            }
+            
+            return [];
+        }
+
+        async function fetchWithProxy(url, proxyIndex = 0) {
+            if (proxyIndex >= PROXIES.length) {
+                throw new Error('All proxy servers failed');
+            }
+
+            const proxy = PROXIES[proxyIndex];
+            const proxiedUrl = proxy + encodeURIComponent(url);
+            
+            try {
+                const response = await fetch(proxiedUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const html = await response.text();
+                
+                if (!html || html.length < 100) {
+                    throw new Error('Response too short or empty');
+                }
+                
+                return html;
+                
+            } catch (error) {
+                return fetchWithProxy(url, proxyIndex + 1);
+            }
+        }
+
+        async function fetchData() {
+            const latInput = document.getElementById('latInput');
+            const lonInput = document.getElementById('lonInput');
+            
+            const lat = parseFloat(latInput.value);
+            const lon = parseFloat(lonInput.value);
+            
+            if (isNaN(lat) || lat < -90 || lat > 90) {
+                showError('Invalid latitude. Must be between -90 and 90.');
+                return;
+            }
+            
+            if (isNaN(lon) || lon < -180 || lon > 180) {
+                showError('Invalid longitude. Must be between -180 and 180.');
+                return;
+            }
+            
+            const runs = [0, 6, 12, 18];
+            const mode = document.getElementById('variableSelect').value;
+            const config = variableConfig[mode];
+            const baseUrl = `https://www.meteociel.fr/modeles/ecmwfens_table.php?x=0&y=0&lat=${lat}&lon=${lon}&run=RUN&ext=1&mode=${mode}&sort=0&aifs=1`;
+            
+            const fetchBtn = document.getElementById('fetchBtn');
+            const loading = document.getElementById('chartLoading');
+            
+            fetchBtn.disabled = true;
+            loading.classList.add('active');
+            hideError();
+            hideWarning();
+            hideSuccess();
+            
+            const runData = {};
+            const allDates = new Set();
+            let successCount = 0;
+            
+            try {
+                for (let run of runs) {
+                    const url = baseUrl.replace('RUN', run);
+                    
+                    try {
+                        const html = await fetchWithProxy(url);
+                        const data = parseTable(html, run);
+                        
+                        if (data.length > 0) {
+                            successCount++;
+                            runData[run] = {};
+                            data.forEach(item => {
+                                runData[run][item.date] = item.value;
+                                allDates.add(item.date);
+                            });
+                        }
+                    } catch (fetchError) {
+                        console.error(`Failed to fetch ${run}Z:`, fetchError.message);
+                    }
+                    
+                    if (run !== runs[runs.length - 1]) {
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                    }
+                }
+                
+                const sortedDates = Array.from(allDates).sort();
+                
+                if (sortedDates.length === 0) {
+                    showError('No data could be extracted from any run.');
+                    setStatus('No data available');
+                    return;
+                }
+                
+                const mergedData = {};
+                sortedDates.forEach(date => {
+                    mergedData[date] = {
+                        points_0: runData[0]?.[date] ?? null,
+                        points_6: runData[6]?.[date] ?? null,
+                        points_12: runData[12]?.[date] ?? null,
+                        points_18: runData[18]?.[date] ?? null
+                    };
+                });
+                
+                updateChart(mergedData, config, lat, lon);
+                
+            } catch (error) {
+                showError(`Error: ${error.message}`);
+                setStatus('Failed to fetch data');
+                console.error(error);
+            } finally {
+                fetchBtn.disabled = false;
+                loading.classList.remove('active');
+            }
+        }
+
+        function updateChart(data, config, lat, lon) {
+            const dates = Object.keys(data);
+            
+            if (dates.length === 0) {
+                console.warn('No data to display in chart');
+                return;
+            }
+            
+            const datasets = [];
+            const runLabels = [];
+            
+            let allValues = [];
+            [0, 6, 12, 18].forEach(run => {
+                const key = `points_${run}`;
+                const values = dates.map(date => data[date][key]).filter(v => v !== null);
+                allValues = allValues.concat(values);
+            });
+            
+            const dataMin = Math.min(...allValues);
+            const dataMax = Math.max(...allValues);
+            
+            const step = config.roundStep;
+            let yMin = roundToStep(dataMin, step, false);
+            let yMax = roundToStep(dataMax, step, true);
+            
+            if (config.name === 'Precipitation' && yMin > 0) {
+                yMin = 0;
+            }
+            
+            const formattedLabels = dates.map(dateStr => {
+                const parts = dateStr.split(' ');
+                if (parts.length < 2) return dateStr;
+                
+                const dateParts = parts[0].split('-');
+                const timeParts = parts[1].split(':');
+                
+                if (dateParts.length === 3 && timeParts.length === 2) {
+                    const day = dateParts[2];
+                    const month = dateParts[1];
+                    const hour = timeParts[0];
+                    return `${day}.${month} ${hour}z`;
+                }
+                return dateStr;
+            });
+            
+            [0, 6, 12, 18].forEach(run => {
+                const key = `points_${run}`;
+                const values = dates.map(date => data[date][key]);
+                
+                const firstValueIndex = values.findIndex(v => v !== null);
+                if (firstValueIndex !== -1) {
+                    runLabels.push({
+                        run: run,
+                        x: firstValueIndex,
+                        y: values[firstValueIndex],
+                        color: colors[run].line
+                    });
+                }
+
+                datasets.push({
+                    label: `${run}Z Run`,
+                    data: values,
+                    borderColor: colors[run].line,
+                    backgroundColor: colors[run].bg,
+                    borderWidth: 2,
+                    pointRadius: 2,
+                    pointHoverRadius: 3,
+                    tension: 0,
+                    fill: false,
+                    spanGaps: true,
+                    pointBorderWidth: 2,
+                    pointHoverBorderColor: '#3b82f6',
+                    pointHoverBorderWidth: 3
+                });
+            });
+
+            if (chart) {
+                chart.destroy();
+                chart = null;
+            }
+
+            const ctx = document.getElementById('forecastChart').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: formattedLabels,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                color: '#cbd5e1',
+                                font: {
+                                    size: 12,
+                                    family: 'Inter'
+                                }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(30, 41, 59, 0.95)',
+                            borderColor: '#3b82f6',
+                            borderWidth: 2,
+                            titleColor: '#f1f5f9',
+                            bodyColor: '#cbd5e1',
+                            titleFont: { size: 14, family: 'Inter', weight: '600' },
+                            bodyFont: { size: 13, family: 'Inter' },
+                            padding: 12,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        let value = context.parsed.y;
+                                        let rounded = Number(value).toFixed(1);
+                                        label += rounded + ' ' + config.unit;
+                                    }
+                                    return label;
+                                }
+                            }
+                        },
+                        annotation: {
+                            annotations: runLabels.reduce((acc, label, idx) => {
+                                acc[`label${idx}`] = {
+                                    type: 'label',
+                                    xValue: label.x,
+                                    yValue: label.y,
+                                    content: [`${label.run}Z`],
+                                    backgroundColor: label.color,
+                                    color: 'white',
+                                    font: {
+                                        size: 11,
+                                        weight: 'bold'
+                                    },
+                                    padding: 4,
+                                    borderRadius: 4,
+                                    yAdjust: -20
+                                };
+                                return acc;
+                            }, {})
+                        },
+                        title: {
+                            display: true,
+                            text: `${config.name} Forecast - ${lat}°N, ${lon}°E`,
+                            color: '#f1f5f9',
+                            font: { size: 18, family: 'Inter', weight: '600' },
+                            padding: { top: 0, bottom: 20 }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: {
+                                color: '#cbd5e1',
+                                font: { size: 14, family: 'Inter', weight: '500' },
+                                maxRotation: 0,
+                                minRotation: 0,
+                                autoSkip: false,
+                                callback: function(value, index) {
+                                    const label = this.getLabelForValue(value);
+                                    if (label && label.endsWith("00z")) {
+                                        return label.split(" ")[0];
+                                    }
+                                    return "";
+                                }
+                            },
+                            grid: { 
+                                color: function(context) {
+                                    const label = formattedLabels[context.index];
+                                    if (label && label.endsWith("00z")) {
+                                        return 'rgba(148, 163, 184, 0.3)';
+                                    }
+                                    return 'transparent';
+                                },
+                                lineWidth: 1
+                            },
+                            border: { 
+                                color: 'rgba(148, 163, 184, 0.2)' 
+                            }
+                        },
+                        y: {
+                            min: yMin,
+                            max: yMax,
+                            title: {
+                                display: true,
+                                text: `${config.name} (${config.unit})`,
+                                color: '#cbd5e1',
+                                font: { size: 14, family: 'Inter', weight: '500' }
+                            },
+                            ticks: {
+                                color: '#cbd5e1',
+                                font: { size: 14, family: 'Inter', weight: '500' },
+                                callback: value => value
+                            },
+                            grid: { 
+                                color: 'rgba(148, 163, 184, 0.1)' 
+                            },
+                            border: { 
+                                color: 'rgba(148, 163, 184, 0.2)' 
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 600,
+                        easing: 'easeOutQuart'
+                    }
+                }
+            });
+        }
+    
+        document.addEventListener('DOMContentLoaded', function() {
+            const canvas = document.getElementById('forecastChart');
+            const ctx = canvas.getContext('2d');
+            
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Day 1', 'Day 2', 'Day 3', 'Day 4'],
+                    datasets: [{
+                        label: 'Placeholder',
+                        data: [10, 20, 15, 30],
+                        borderColor: '#475569',
+                        backgroundColor: 'rgba(71, 85, 105, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: false,
+                        pointRadius: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: false,
+                    plugins: {
+                        legend: { display: false },
+                        title: {
+                            display: true,
+                            text: 'Click "Update" to load forecast data',
+                            color: '#cbd5e1',
+                            font: { size: 15, family: 'Inter', weight: '500' },
+                            padding: { top: 0, bottom: 30 }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: '#cbd5e1', font: { size: 14, family: 'Inter' } },
+                            grid: { color: 'rgba(100, 116, 139, 0.1)' }
+                        },
+                        y: {
+                            ticks: { 
+                                color: '#cbd5e1', 
+                                font: { size: 14, family: 'Inter' }, 
+                                callback: value => value
+                            },
+                            grid: { color: 'rgba(100, 116, 139, 0.1)' }
+                        }
+                    }
+                }
+            });
+        });
+        
+    </script>
+</body>
+</html>
