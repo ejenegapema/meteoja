@@ -10,9 +10,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
 
 <style>
-* {
-    box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
     margin: 0;
@@ -22,11 +20,7 @@ body {
     color: #e2e8f0;
 }
 
-.container {
-    max-width: 1200px;
-    margin: auto;
-    padding: 20px;
-}
+.container { max-width: 1200px; margin: auto; padding: 20px; }
 
 .header-info {
     text-align: center;
@@ -36,16 +30,8 @@ body {
     border-radius: 12px;
 }
 
-.header-info h1 {
-    margin: 0 0 10px;
-    color: #f1f5f9;
-    font-size: 32px;
-}
-
-.info-line {
-    color: #cbd5e1;
-    font-size: 18px;
-}
+.header-info h1 { margin: 0 0 10px; color: #f1f5f9; font-size: 32px; }
+.info-line { color: #cbd5e1; font-size: 18px; }
 
 .message {
     display: none;
@@ -55,23 +41,9 @@ body {
     text-align: center;
 }
 
-#errorMessage {
-    color: #ef4444;
-    background: #2e1f1f;
-    border: 1px solid #7f1d1d;
-}
-
-#warningMessage {
-    color: #f59e0b;
-    background: #2e2410;
-    border: 1px solid #78350f;
-}
-
-#successMessage {
-    color: #10b981;
-    background: #1a2e26;
-    border: 1px solid #064e3b;
-}
+#errorMessage { color: #ef4444; background: #2e1f1f; border: 1px solid #7f1d1d; }
+#warningMessage { color: #f59e0b; background: #2e2410; border: 1px solid #78350f; }
+#successMessage { color: #10b981; background: #1a2e26; border: 1px solid #064e3b; }
 
 .form-container {
     background: #1e293b;
@@ -88,16 +60,8 @@ body {
     align-items: flex-end;
 }
 
-.form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.form-label {
-    color: #cbd5e1;
-    font-size: 14px;
-}
+.form-group { display: flex; flex-direction: column; gap: 8px; }
+.form-label { color: #cbd5e1; font-size: 14px; }
 
 .form-input,
 .form-select {
@@ -110,13 +74,8 @@ body {
     font-family: Inter, sans-serif;
 }
 
-.form-input {
-    width: 120px;
-}
-
-.form-select {
-    min-width: 200px;
-}
+.form-input { width: 120px; }
+.form-select { min-width: 200px; }
 
 .submit-btn {
     height: 42px;
@@ -129,10 +88,7 @@ body {
     cursor: pointer;
 }
 
-.submit-btn:disabled {
-    background: #475569;
-    cursor: wait;
-}
+.submit-btn:disabled { background: #475569; cursor: wait; }
 
 .chart-container {
     background: #1e293b;
@@ -141,10 +97,7 @@ body {
     position: relative;
 }
 
-.chart-wrapper {
-    position: relative;
-    height: 450px;
-}
+.chart-wrapper { position: relative; height: 450px; }
 
 .chart-loading {
     position: absolute;
@@ -156,9 +109,7 @@ body {
     z-index: 10;
 }
 
-.chart-loading.active {
-    display: flex;
-}
+.chart-loading.active { display: flex; }
 
 .spinner {
     width: 60px;
@@ -169,11 +120,7 @@ body {
     animation: spin 1s linear infinite;
 }
 
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
-}
+@keyframes spin { to { transform: rotate(360deg); } }
 
 .status-text {
     text-align: center;
@@ -191,7 +138,7 @@ body {
     font: 12px monospace;
     white-space: pre-wrap;
     word-break: break-word;
-    max-height: 250px;
+    max-height: 320px;
     overflow: auto;
 }
 </style>
@@ -203,9 +150,7 @@ body {
 
     <div class="header-info">
         <h1>ECMWF AIFS Weather Forecast</h1>
-        <div class="info-line">
-            Model Run - 0Z, 6Z, 12Z, 18Z
-        </div>
+        <div class="info-line">Model Run - 0Z, 6Z, 12Z, 18Z</div>
     </div>
 
     <div id="errorMessage" class="message" role="alert"></div>
@@ -213,105 +158,41 @@ body {
     <div id="successMessage" class="message" role="status"></div>
 
     <div class="form-container">
-
         <div class="form-grid">
 
             <div class="form-group">
                 <label class="form-label" for="latInput">Latitude</label>
-                <input
-                    id="latInput"
-                    class="form-input"
-                    type="number"
-                    value="42.5"
-                    step="0.1"
-                    min="-90"
-                    max="90"
-                >
+                <input id="latInput" class="form-input" type="number" value="42.5" step="0.1" min="-90" max="90">
             </div>
 
             <div class="form-group">
                 <label class="form-label" for="lonInput">Longitude</label>
-                <input
-                    id="lonInput"
-                    class="form-input"
-                    type="number"
-                    value="42"
-                    step="0.1"
-                    min="-180"
-                    max="180"
-                >
+                <input id="lonInput" class="form-input" type="number" value="42" step="0.1" min="-180" max="180">
             </div>
 
             <div class="form-group">
                 <label class="form-label" for="variableSelect">Weather Variable</label>
-
                 <select id="variableSelect" class="form-select">
-
-                    <option value="7">
-                        T2m
-                    </option>
-
-                    <option value="0">
-                        T850
-                    </option>
-
-                    <option value="4">
-                        Z500
-                    </option>
-
-                    <option value="2">
-                        MSLP
-                    </option>
-
-                    <option value="13">
-                        Precipitation
-                    </option>
-
+                    <option value="7">T2m</option>
+                    <option value="0">T850</option>
+                    <option value="4">Z500</option>
+                    <option value="2">MSLP</option>
+                    <option value="13">Precipitation</option>
                 </select>
             </div>
 
             <div class="form-group">
-
-                <button
-                    id="fetchBtn"
-                    type="button"
-                    class="submit-btn"
-                    onclick="fetchData()"
-                >
-                    Update
-                </button>
-
+                <button id="fetchBtn" type="button" class="submit-btn" onclick="fetchData()">Update</button>
             </div>
 
         </div>
-
     </div>
 
     <div class="chart-container">
-
-        <div
-            id="chartLoading"
-            class="chart-loading"
-        >
-            <div class="spinner"></div>
-        </div>
-
-        <div class="chart-wrapper">
-            <canvas id="forecastChart"></canvas>
-        </div>
-
-        <div
-            id="statusText"
-            class="status-text"
-        >
-            Ready
-        </div>
-
-        <div
-            id="debugBox"
-            class="debug"
-        ></div>
-
+        <div id="chartLoading" class="chart-loading"><div class="spinner"></div></div>
+        <div class="chart-wrapper"><canvas id="forecastChart"></canvas></div>
+        <div id="statusText" class="status-text">Ready</div>
+        <div id="debugBox" class="debug"></div>
     </div>
 
 </div>
@@ -320,68 +201,77 @@ body {
 
 let chart = null;
 
-
 /* =========================================================
    CONFIG
 ========================================================= */
 
 const RUNS = [0, 6, 12, 18];
 
-const COLORS = {
-
-    0: '#53a0e5',
-
-    6: '#ffea00',
-
-    12: '#1cc412',
-
-    18: '#ff0000'
-
-};
+const COLORS = { 0: '#53a0e5', 6: '#ffea00', 12: '#1cc412', 18: '#ff0000' };
 
 const VARIABLE_CONFIG = {
-
-    0: {
-        name: 'T850',
-        unit: '°C',
-        roundStep: 5
-    },
-
-    2: {
-        name: 'MSLP',
-        unit: 'hPa',
-        roundStep: 10
-    },
-
-    4: {
-        name: 'Z500',
-        unit: 'dm',
-        roundStep: 50
-    },
-
-    7: {
-        name: 'T2m',
-        unit: '°C',
-        roundStep: 5
-    },
-
-    13: {
-        name: 'Precipitation',
-        unit: 'mm',
-        roundStep: 5
-    }
-
+    0:  { name: 'T850',          unit: '°C',  roundStep: 5  },
+    2:  { name: 'MSLP',          unit: 'hPa', roundStep: 10 },
+    4:  { name: 'Z500',          unit: 'dm',  roundStep: 50 },
+    7:  { name: 'T2m',           unit: '°C',  roundStep: 5  },
+    13: { name: 'Precipitation', unit: 'mm',  roundStep: 5  }
 };
 
 /*
-    Public CORS proxy. Direct browser fetches to
-    meteociel.fr fail because that server does not
-    send an Access-Control-Allow-Origin header for
-    third-party origins. In production, replace this
-    with a small server-side proxy you control instead
-    of relying on a public one (rate limits/uptime vary).
+    Multiple extraction strategies, tried in order.
+    meteociel.fr does not send CORS headers for third-party
+    origins, so a plain fetch() fails ("Failed to fetch").
+    We fall back through several public proxies/readers so
+    that a single dead/rate-limited service doesn't break
+    the whole tool. For production, replace these with a
+    server you control.
 */
-const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
+const PROXIES = [
+
+    {
+        name: 'direct',
+        build: (url) => url
+    },
+
+    {
+        name: 'allorigins-raw',
+        build: (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`
+    },
+
+    {
+        name: 'allorigins-get',
+        build: (url) => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
+        jsonWrapped: true
+    },
+
+    {
+        name: 'corsproxy.io',
+        build: (url) => `https://corsproxy.io/?url=${encodeURIComponent(url)}`
+    },
+
+    {
+        name: 'codetabs',
+        build: (url) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`
+    },
+
+    {
+        name: 'thingproxy',
+        build: (url) => `https://thingproxy.freeboard.io/fetch/${url}`
+    },
+
+    {
+        name: 'yacdn',
+        build: (url) => `https://yacdn.org/proxy/${url}`
+    },
+
+    {
+        name: 'jina-reader',
+        build: (url) => `https://r.jina.ai/${url}`
+    }
+
+];
+
+const PROXY_TIMEOUT_MS = 15000;
 
 
 /* =========================================================
@@ -389,67 +279,43 @@ const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
 ========================================================= */
 
 function setStatus(text) {
-
     document.getElementById('statusText').textContent = text;
-
 }
 
 function showError(text) {
-
     const el = document.getElementById('errorMessage');
-
     el.textContent = text;
-
     el.style.display = 'block';
-
 }
 
 function hideError() {
-
     document.getElementById('errorMessage').style.display = 'none';
-
 }
 
 function showWarning(text) {
-
     const el = document.getElementById('warningMessage');
-
     el.textContent = text;
-
     el.style.display = 'block';
-
 }
 
 function hideWarning() {
-
     document.getElementById('warningMessage').style.display = 'none';
-
 }
 
 function showSuccess(text) {
-
     const el = document.getElementById('successMessage');
-
     el.textContent = text;
-
     el.style.display = 'block';
-
 }
 
 function hideSuccess() {
-
     document.getElementById('successMessage').style.display = 'none';
-
 }
 
 function debug(text) {
-
     const el = document.getElementById('debugBox');
-
     el.textContent = text;
-
     el.style.display = 'block';
-
 }
 
 
@@ -471,81 +337,44 @@ function buildUrl(lat, lon, mode, run) {
     params.set('sort', '0');
     params.set('aifs', '1');
 
-    return (
-        'https://www.meteociel.fr/modeles/' +
-        'ecmwfens_table.php?' +
-        params.toString()
-    );
+    return 'https://www.meteociel.fr/modeles/ecmwfens_table.php?' + params.toString();
 
 }
 
 
 /* =========================================================
-   DATE PARSER
+   DATE / NUMBER PARSERS
 ========================================================= */
 
 function parseDate(text) {
 
-    if (!text) {
-        return null;
-    }
+    if (!text) return null;
 
-    const value = text
-        .replace(/\u00a0/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
+    const value = text.replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
 
-    const match = value.match(
-        /(\d{4})-(\d{2})-(\d{2})\s+(\d{1,2})Z/i
-    );
+    const match = value.match(/(\d{4})-(\d{2})-(\d{2})\s+(\d{1,2})Z/i);
 
-    if (!match) {
-        return null;
-    }
+    if (!match) return null;
 
-    return (
-        `${match[1]}-${match[2]}-${match[3]} ` +
-        `${String(match[4]).padStart(2, '0')}:00`
-    );
+    return `${match[1]}-${match[2]}-${match[3]} ${String(match[4]).padStart(2, '0')}:00`;
 
 }
 
-
-/* =========================================================
-   NUMBER PARSER
-========================================================= */
-
 function parseNumber(text) {
 
-    if (text === null || text === undefined) {
-        return null;
-    }
+    if (text === null || text === undefined) return null;
 
-    let value = String(text)
-        .replace(/\u00a0/g, ' ')
-        .trim();
+    let value = String(text).replace(/\u00a0/g, ' ').trim();
 
-    if (!value) {
-        return null;
-    }
+    if (!value) return null;
 
-    /*
-        Keep only numeric representation.
-    */
+    value = value.replace(',', '.').match(/[-+]?\d*\.?\d+/);
 
-    value = value
-        .replace(',', '.')
-        .match(/[-+]?\d*\.?\d+/);
-
-    if (!value) {
-        return null;
-    }
+    if (!value) return null;
 
     const number = Number(value[0]);
 
-    return Number.isFinite(number)
-        ? number
-        : null;
+    return Number.isFinite(number) ? number : null;
 
 }
 
@@ -557,320 +386,119 @@ function parseNumber(text) {
 function parseTable(html, run) {
 
     const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const tables = Array.from(doc.querySelectorAll('table'));
 
-    const doc =
-        parser.parseFromString(
-            html,
-            'text/html'
-        );
+    console.log(`${run}Z: tables =`, tables.length);
 
-    const tables =
-        Array.from(
-            doc.querySelectorAll('table')
-        );
+    for (let tableNo = 0; tableNo < tables.length; tableNo++) {
 
-    console.log(
-        `${run}Z: tables =`,
-        tables.length
-    );
+        const table = tables[tableNo];
+        const rows = Array.from(table.querySelectorAll('tr'));
 
-    /*
-        Search every table.
-    */
-
-    for (
-        let tableNo = 0;
-        tableNo < tables.length;
-        tableNo++
-    ) {
-
-        const table =
-            tables[tableNo];
-
-        const rows =
-            Array.from(
-                table.querySelectorAll('tr')
-            );
-
-        if (!rows.length) {
-            continue;
-        }
-
-        /*
-            Find header row.
-        */
+        if (!rows.length) continue;
 
         let headerIndex = -1;
         let dateIndex = -1;
         let detIndex = -1;
 
-        for (
-            let r = 0;
-            r < rows.length;
-            r++
-        ) {
+        for (let r = 0; r < rows.length; r++) {
 
-            const cells =
-                Array.from(
-                    rows[r].querySelectorAll(
-                        'th,td'
-                    )
-                );
+            const cells = Array.from(rows[r].querySelectorAll('th,td'));
 
-            const texts =
-                cells.map(cell =>
-                    cell.textContent
-                        .replace(/\u00a0/g, ' ')
-                        .replace(/\s+/g, ' ')
-                        .trim()
-                        .toUpperCase()
-                );
+            const texts = cells.map(cell =>
+                cell.textContent.replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim().toUpperCase()
+            );
 
-            const d =
-                texts.findIndex(
-                    x => x === 'DATE' ||
-                         x.includes('DATE')
-                );
+            const d = texts.findIndex(x => x === 'DATE' || x.includes('DATE'));
+            const det = texts.findIndex(x => x === 'DET' || x.startsWith('DET '));
 
-            const det =
-                texts.findIndex(
-                    x => x === 'DET' ||
-                         x.startsWith('DET ')
-                );
-
-            if (
-                d !== -1 &&
-                det !== -1
-            ) {
-
+            if (d !== -1 && det !== -1) {
                 headerIndex = r;
-
                 dateIndex = d;
-
                 detIndex = det;
-
                 break;
             }
 
         }
 
-        if (headerIndex === -1) {
-            continue;
-        }
+        if (headerIndex === -1) continue;
 
-        console.log(
-            `${run}Z: table=${tableNo}`,
-            `date=${dateIndex}`,
-            `det=${detIndex}`
-        );
+        console.log(`${run}Z: table=${tableNo}`, `date=${dateIndex}`, `det=${detIndex}`);
 
         const result = [];
 
-        /*
-            Parse rows after header.
-        */
+        for (let r = headerIndex + 1; r < rows.length; r++) {
 
-        for (
-            let r = headerIndex + 1;
-            r < rows.length;
-            r++
-        ) {
+            const cells = Array.from(rows[r].querySelectorAll('th,td'));
 
-            const cells =
-                Array.from(
-                    rows[r].querySelectorAll(
-                        'th,td'
-                    )
-                );
+            if (!cells.length) continue;
 
-            if (!cells.length) {
-                continue;
-            }
-
-            const texts =
-                cells.map(cell =>
-                    cell.textContent
-                        .replace(/\u00a0/g, ' ')
-                        .replace(/\s+/g, ' ')
-                        .trim()
-                );
-
-            /*
-                Find date anywhere in row.
-            */
+            const texts = cells.map(cell =>
+                cell.textContent.replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim()
+            );
 
             let foundDate = null;
 
-            for (
-                const text of texts
-            ) {
-
-                const parsed =
-                    parseDate(text);
-
-                if (parsed) {
-
-                    foundDate = parsed;
-
-                    break;
-                }
-
+            for (const text of texts) {
+                const parsed = parseDate(text);
+                if (parsed) { foundDate = parsed; break; }
             }
 
-            if (!foundDate) {
-                continue;
-            }
-
-            /*
-                DET position.
-            */
+            if (!foundDate) continue;
 
             let detValue = null;
 
-            if (
-                detIndex >= 0 &&
-                detIndex < texts.length
-            ) {
-
-                detValue =
-                    parseNumber(
-                        texts[detIndex]
-                    );
-
+            if (detIndex >= 0 && detIndex < texts.length) {
+                detValue = parseNumber(texts[detIndex]);
             }
-
-            /*
-                If expected position failed,
-                look around the DET column.
-            */
 
             if (detValue === null) {
-
-                for (
-                    let c = detIndex;
-                    c < texts.length;
-                    c++
-                ) {
-
-                    const candidate =
-                        parseNumber(
-                            texts[c]
-                        );
-
-                    if (
-                        candidate !== null
-                    ) {
-
-                        detValue =
-                            candidate;
-
-                        break;
-                    }
-
+                for (let c = detIndex; c < texts.length; c++) {
+                    const candidate = parseNumber(texts[c]);
+                    if (candidate !== null) { detValue = candidate; break; }
                 }
-
             }
 
-            if (
-                detValue === null
-            ) {
-                continue;
-            }
+            if (detValue === null) continue;
 
-            result.push({
-
-                date: foundDate,
-
-                value: detValue
-
-            });
+            result.push({ date: foundDate, value: detValue });
 
         }
 
         if (result.length) {
 
-            /*
-                Remove duplicate dates.
-            */
-
             const map = new Map();
+            for (const item of result) map.set(item.date, item.value);
 
-            for (
-                const item of result
-            ) {
-
-                map.set(
-                    item.date,
-                    item.value
-                );
-
-            }
-
-            return Array.from(
-                map,
-                ([date, value]) => ({
-                    date,
-                    value
-                })
-            );
+            return Array.from(map, ([date, value]) => ({ date, value }));
 
         }
 
     }
 
-    /*
-        Fallback:
-        parse page text directly.
-    */
+    /* Fallback: parse page text directly */
 
-    const text =
-        doc.body?.innerText || '';
-
-    const lines =
-        text.split(/\n+/);
-
+    const text = doc.body?.innerText || '';
+    const lines = text.split(/\n+/);
     const fallback = [];
 
-    for (
-        const lineRaw of lines
-    ) {
+    for (const lineRaw of lines) {
 
-        const line =
-            lineRaw.trim();
+        const line = lineRaw.trim();
 
-        const match =
-            line.match(
-                /^(\d{4}-\d{2}-\d{2})\s+(\d{1,2})Z(?:\s+)([-+]?\d*\.?\d+)/i
-            );
+        const match = line.match(/^(\d{4}-\d{2}-\d{2})\s+(\d{1,2})Z(?:\s+)([-+]?\d*\.?\d+)/i);
 
-        if (!match) {
-            continue;
-        }
+        if (!match) continue;
 
-        const date =
-            `${match[1]} ` +
-            `${String(match[2]).padStart(2, '0')}:00`;
+        const date = `${match[1]} ${String(match[2]).padStart(2, '0')}:00`;
+        const value = Number(match[3]);
 
-        const value =
-            Number(match[3]);
-
-        if (
-            Number.isFinite(value)
-        ) {
-
-            fallback.push({
-                date,
-                value
-            });
-
-        }
+        if (Number.isFinite(value)) fallback.push({ date, value });
 
     }
 
-    console.log(
-        `${run}Z fallback =`,
-        fallback.length
-    );
+    console.log(`${run}Z fallback =`, fallback.length);
 
     return fallback;
 
@@ -878,48 +506,73 @@ function parseTable(html, run) {
 
 
 /* =========================================================
-   DIRECT FETCH (via CORS proxy)
+   MULTI-STRATEGY FETCH
 ========================================================= */
 
-async function fetchDirect(url) {
+async function fetchWithTimeout(url, ms) {
 
-    const proxiedUrl =
-        CORS_PROXY + encodeURIComponent(url);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), ms);
 
-    console.log(
-        'PROXY GET:',
-        proxiedUrl
-    );
+    try {
+        return await fetch(url, { method: 'GET', cache: 'no-store', signal: controller.signal });
+    } finally {
+        clearTimeout(timer);
+    }
 
-    const response =
-        await fetch(
-            proxiedUrl,
-            {
-                method: 'GET',
-                cache: 'no-store'
+}
+
+async function fetchViaAllStrategies(url, run, logs) {
+
+    const attempts = [];
+
+    for (const proxy of PROXIES) {
+
+        const targetUrl = proxy.build(url);
+
+        try {
+
+            logs.push(`${run}Z [${proxy.name}] → ${targetUrl}`);
+
+            const response = await fetchWithTimeout(targetUrl, PROXY_TIMEOUT_MS);
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status} ${response.statusText}`);
             }
-        );
 
-    if (!response.ok) {
+            let html;
 
-        throw new Error(
-            `HTTP ${response.status} ${response.statusText}`
-        );
+            if (proxy.jsonWrapped) {
+                const json = await response.json();
+                html = json?.contents ?? '';
+            } else {
+                html = await response.text();
+            }
+
+            if (!html || html.length < 50) {
+                throw new Error('Empty or too-short response');
+            }
+
+            logs.push(`${run}Z [${proxy.name}] OK — ${html.length} bytes`);
+
+            attempts.push({ name: proxy.name, ok: true });
+
+            return { html, proxyUsed: proxy.name, attempts };
+
+        } catch (error) {
+
+            logs.push(`${run}Z [${proxy.name}] FAILED — ${error.message}`);
+
+            attempts.push({ name: proxy.name, ok: false, error: error.message });
+
+        }
 
     }
 
-    const html =
-        await response.text();
-
-    if (!html) {
-
-        throw new Error(
-            'Meteociel returned an empty response'
-        );
-
-    }
-
-    return html;
+    throw new Error(
+        `All ${PROXIES.length} extraction methods failed for ${run}Z ` +
+        `(${attempts.map(a => a.name).join(', ')})`
+    );
 
 }
 
@@ -930,70 +583,29 @@ async function fetchDirect(url) {
 
 async function fetchData() {
 
-    const latRaw =
-        document.getElementById('latInput').value.trim();
-
-    const lonRaw =
-        document.getElementById('lonInput').value.trim();
+    const latRaw = document.getElementById('latInput').value.trim();
+    const lonRaw = document.getElementById('lonInput').value.trim();
 
     const lat = Number(latRaw);
-
     const lon = Number(lonRaw);
 
-    const mode =
-        document.getElementById(
-            'variableSelect'
-        ).value;
+    const mode = document.getElementById('variableSelect').value;
+    const config = VARIABLE_CONFIG[mode];
 
-    const config =
-        VARIABLE_CONFIG[mode];
+    const button = document.getElementById('fetchBtn');
+    const loading = document.getElementById('chartLoading');
 
-    const button =
-        document.getElementById(
-            'fetchBtn'
-        );
-
-    const loading =
-        document.getElementById(
-            'chartLoading'
-        );
-
-
-    /*
-        Validate.
-    */
-
-    if (
-        latRaw === '' ||
-        !Number.isFinite(lat) ||
-        lat < -90 ||
-        lat > 90
-    ) {
-
-        showError(
-            'Invalid latitude.'
-        );
-
+    if (latRaw === '' || !Number.isFinite(lat) || lat < -90 || lat > 90) {
+        showError('Invalid latitude.');
         return;
     }
 
-    if (
-        lonRaw === '' ||
-        !Number.isFinite(lon) ||
-        lon < -180 ||
-        lon > 180
-    ) {
-
-        showError(
-            'Invalid longitude.'
-        );
-
+    if (lonRaw === '' || !Number.isFinite(lon) || lon < -180 || lon > 180) {
+        showError('Invalid longitude.');
         return;
     }
-
 
     button.disabled = true;
-
     loading.classList.add('active');
 
     hideError();
@@ -1003,206 +615,97 @@ async function fetchData() {
     debug('');
 
     let logs = [];
-
     const runData = {};
-
     const dates = new Set();
-
+    const proxySummary = {};
     let successfulRuns = 0;
-
 
     try {
 
-        for (
-            const run of RUNS
-        ) {
+        for (const run of RUNS) {
 
-            const url =
-                buildUrl(
-                    lat,
-                    lon,
-                    mode,
-                    run
-                );
+            const url = buildUrl(lat, lon, mode, run);
 
-            setStatus(
-                `Fetching ${run}Z...`
-            );
-
-            logs.push(
-                `${run}Z URL:\n${url}`
-            );
-
+            setStatus(`Fetching ${run}Z (trying ${PROXIES.length} methods)...`);
 
             try {
 
-                const html =
-                    await fetchDirect(
-                        url
-                    );
+                const { html, proxyUsed } = await fetchViaAllStrategies(url, run, logs);
 
-                logs.push(
-                    `${run}Z response: ${html.length} bytes`
-                );
+                proxySummary[run] = proxyUsed;
 
-                const parsed =
-                    parseTable(
-                        html,
-                        run
-                    );
+                const parsed = parseTable(html, run);
 
-                logs.push(
-                    `${run}Z parsed: ${parsed.length}`
-                );
+                logs.push(`${run}Z parsed via [${proxyUsed}]: ${parsed.length} points`);
 
-
-                if (
-                    parsed.length > 0
-                ) {
+                if (parsed.length > 0) {
 
                     successfulRuns++;
-
                     runData[run] = {};
 
-                    for (
-                        const item of parsed
-                    ) {
-
-                        runData[run][
-                            item.date
-                        ] = item.value;
-
-                        dates.add(
-                            item.date
-                        );
-
+                    for (const item of parsed) {
+                        runData[run][item.date] = item.value;
+                        dates.add(item.date);
                     }
+
+                } else {
+
+                    logs.push(`${run}Z: fetched OK but no rows parsed (page format may have changed)`);
 
                 }
 
             } catch (error) {
 
-                console.error(
-                    `${run}Z`,
-                    error
-                );
-
-                logs.push(
-                    `${run}Z ERROR: ${error.message}`
-                );
+                console.error(`${run}Z`, error);
+                logs.push(`${run}Z GIVING UP: ${error.message}`);
 
             }
 
-            /*
-                Delay between requests.
-            */
-
-            await new Promise(
-                resolve =>
-                    setTimeout(
-                        resolve,
-                        500
-                    )
-            );
+            await new Promise(resolve => setTimeout(resolve, 500));
 
         }
 
-
-        debug(
-            logs.join('\n\n')
-        );
-
+        debug(logs.join('\n\n'));
 
         if (!dates.size) {
-
-            throw new Error(
-                'No data parsed from Meteociel.'
-            );
-
+            throw new Error('No data could be extracted from Meteociel via any method.');
         }
-
-
-        /*
-            Merge runs.
-        */
 
         const merged = {};
 
-        for (
-            const date of dates
-        ) {
-
+        for (const date of dates) {
             merged[date] = {
-
-                points_0:
-                    runData[0]?.[date] ??
-                    null,
-
-                points_6:
-                    runData[6]?.[date] ??
-                    null,
-
-                points_12:
-                    runData[12]?.[date] ??
-                    null,
-
-                points_18:
-                    runData[18]?.[date] ??
-                    null
-
+                points_0:  runData[0]?.[date]  ?? null,
+                points_6:  runData[6]?.[date]  ?? null,
+                points_12: runData[12]?.[date] ?? null,
+                points_18: runData[18]?.[date] ?? null
             };
-
         }
 
+        updateChart(merged, config, lat, lon);
 
-        updateChart(
-            merged,
-            config,
-            lat,
-            lon
-        );
-
+        const proxyNote = Object.entries(proxySummary)
+            .map(([run, name]) => `${run}Z via ${name}`)
+            .join(', ');
 
         if (successfulRuns === RUNS.length) {
-
-            showSuccess(
-                `${successfulRuns}/${RUNS.length} runs loaded — ${dates.size} timestamps`
-            );
-
+            showSuccess(`${successfulRuns}/${RUNS.length} runs loaded — ${dates.size} timestamps (${proxyNote})`);
         } else {
-
-            showWarning(
-                `Only ${successfulRuns}/${RUNS.length} runs loaded — ${dates.size} timestamps (some runs failed)`
-            );
-
+            showWarning(`Only ${successfulRuns}/${RUNS.length} runs loaded — ${dates.size} timestamps (${proxyNote || 'no successful proxy'})`);
         }
 
-        setStatus(
-            `${dates.size} forecast timestamps`
-        );
-
+        setStatus(`${dates.size} forecast timestamps`);
 
     } catch (error) {
 
-        console.error(
-            error
-        );
-
-        showError(
-            error.message
-        );
-
-        setStatus(
-            'Failed'
-        );
+        console.error(error);
+        showError(error.message);
+        setStatus('Failed');
 
     } finally {
 
         button.disabled = false;
-
-        loading.classList.remove(
-            'active'
-        );
+        loading.classList.remove('active');
 
     }
 
@@ -1213,385 +716,115 @@ async function fetchData() {
    CHART
 ========================================================= */
 
-function updateChart(
-    data,
-    config,
-    lat,
-    lon
-) {
+function updateChart(data, config, lat, lon) {
 
-    const dates =
-        Object.keys(data).sort();
-
-    if (!dates.length) {
-        return;
-    }
-
+    const dates = Object.keys(data).sort();
+    if (!dates.length) return;
 
     let allValues = [];
 
-    for (
-        const run of RUNS
-    ) {
-
-        const key =
-            `points_${run}`;
-
-        for (
-            const date of dates
-        ) {
-
-            const value =
-                data[date][key];
-
-            if (
-                value !== null &&
-                Number.isFinite(value)
-            ) {
-
-                allValues.push(
-                    value
-                );
-
-            }
-
+    for (const run of RUNS) {
+        const key = `points_${run}`;
+        for (const date of dates) {
+            const value = data[date][key];
+            if (value !== null && Number.isFinite(value)) allValues.push(value);
         }
-
     }
 
+    if (!allValues.length) return;
 
-    if (!allValues.length) {
-        return;
-    }
+    const step = config.roundStep;
+    const minValue = Math.min(...allValues);
+    const maxValue = Math.max(...allValues);
 
+    let yMin = Math.floor(minValue / step) * step;
+    let yMax = Math.ceil(maxValue / step) * step;
 
-    const step =
-        config.roundStep;
+    if (yMin === yMax) { yMin -= step; yMax += step; }
 
-    const minValue =
-        Math.min(...allValues);
+    if (config.name === 'Precipitation' && yMin > 0) yMin = 0;
 
-    const maxValue =
-        Math.max(...allValues);
-
-    let yMin =
-        Math.floor(
-            minValue / step
-        ) * step;
-
-    let yMax =
-        Math.ceil(
-            maxValue / step
-        ) * step;
-
-
-    if (yMin === yMax) {
-
-        yMin -= step;
-
-        yMax += step;
-
-    }
-
-
-    if (
-        config.name ===
-        'Precipitation' &&
-        yMin > 0
-    ) {
-
-        yMin = 0;
-
-    }
-
-
-    const labels =
-        dates.map(
-            date => {
-
-                const parts =
-                    date.split(' ');
-
-                const d =
-                    parts[0].split('-');
-
-                const hour =
-                    parts[1]
-                        .split(':')[0];
-
-                return (
-                    `${d[2]}.${d[1]} ${hour}z`
-                );
-
-            }
-        );
-
+    const labels = dates.map(date => {
+        const parts = date.split(' ');
+        const d = parts[0].split('-');
+        const hour = parts[1].split(':')[0];
+        return `${d[2]}.${d[1]} ${hour}z`;
+    });
 
     const datasets = [];
 
-
-    for (
-        const run of RUNS
-    ) {
-
-        const key =
-            `points_${run}`;
-
+    for (const run of RUNS) {
+        const key = `points_${run}`;
         datasets.push({
-
-            label:
-                `${run}Z Run`,
-
-            data:
-                dates.map(
-                    date =>
-                        data[date][key]
-                ),
-
-            borderColor:
-                COLORS[run],
-
-            backgroundColor:
-                COLORS[run],
-
+            label: `${run}Z Run`,
+            data: dates.map(date => data[date][key]),
+            borderColor: COLORS[run],
+            backgroundColor: COLORS[run],
             borderWidth: 2,
-
             pointRadius: 2,
-
             pointHoverRadius: 4,
-
             tension: 0,
-
             spanGaps: true,
-
             fill: false
-
         });
-
     }
 
+    if (chart) { chart.destroy(); chart = null; }
 
-    if (chart) {
-
-        chart.destroy();
-
-        chart = null;
-
-    }
-
-
-    chart =
-        new Chart(
-            document
-                .getElementById(
-                    'forecastChart'
-                )
-                .getContext('2d'),
-
-            {
-
-                type: 'line',
-
-                data: {
-
-                    labels,
-
-                    datasets
-
+    chart = new Chart(document.getElementById('forecastChart').getContext('2d'), {
+        type: 'line',
+        data: { labels, datasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { intersect: false, mode: 'index' },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: { color: '#cbd5e1', font: { family: 'Inter', size: 12 } }
                 },
-
-                options: {
-
-                    responsive: true,
-
-                    maintainAspectRatio: false,
-
-                    interaction: {
-
-                        intersect: false,
-
-                        mode: 'index'
-
-                    },
-
-                    plugins: {
-
-                        legend: {
-
-                            display: true,
-
-                            position: 'top',
-
-                            labels: {
-
-                                color:
-                                    '#cbd5e1',
-
-                                font: {
-
-                                    family:
-                                        'Inter',
-
-                                    size: 12
-
-                                }
-
+                title: {
+                    display: true,
+                    text: `${config.name} Forecast — ${lat}°N, ${lon}°E`,
+                    color: '#f1f5f9',
+                    font: { family: 'Inter', size: 18, weight: '600' }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            if (context.parsed.y === null) {
+                                return context.dataset.label + ': no data';
                             }
-
-                        },
-
-                        title: {
-
-                            display: true,
-
-                            text:
-                                `${config.name} Forecast — ${lat}°N, ${lon}°E`,
-
-                            color:
-                                '#f1f5f9',
-
-                            font: {
-
-                                family:
-                                    'Inter',
-
-                                size: 18,
-
-                                weight:
-                                    '600'
-
-                            }
-
-                        },
-
-                        tooltip: {
-
-                            callbacks: {
-
-                                label:
-                                    function(context) {
-
-                                        if (
-                                            context.parsed.y === null
-                                        ) {
-
-                                            return context
-                                                .dataset
-                                                .label +
-                                                ': no data';
-
-                                        }
-
-                                        return (
-                                            context
-                                                .dataset
-                                                .label +
-                                            ': ' +
-                                            context
-                                                .parsed
-                                                .y
-                                                .toFixed(1) +
-                                            ' ' +
-                                            config.unit
-                                        );
-
-                                    }
-
-                            }
-
+                            return context.dataset.label + ': ' + context.parsed.y.toFixed(1) + ' ' + config.unit;
                         }
-
-                    },
-
-                    scales: {
-
-                        x: {
-
-                            ticks: {
-
-                                color:
-                                    '#cbd5e1',
-
-                                autoSkip: false,
-
-                                maxRotation: 0,
-
-                                callback:
-                                    function(
-                                        value,
-                                        index
-                                    ) {
-
-                                        const label =
-                                            labels[index];
-
-                                        if (
-                                            label?.endsWith(
-                                                '00z'
-                                            )
-                                        ) {
-
-                                            return label
-                                                .split(' ')[0];
-
-                                        }
-
-                                        return '';
-
-                                    }
-
-                            },
-
-                            grid: {
-
-                                color:
-                                    'rgba(148,163,184,.15)'
-
-                            }
-
-                        },
-
-                        y: {
-
-                            min: yMin,
-
-                            max: yMax,
-
-                            ticks: {
-
-                                color:
-                                    '#cbd5e1'
-
-                            },
-
-                            title: {
-
-                                display: true,
-
-                                text:
-                                    `${config.name} (${config.unit})`,
-
-                                color:
-                                    '#cbd5e1'
-
-                            },
-
-                            grid: {
-
-                                color:
-                                    'rgba(148,163,184,.10)'
-
-                            }
-
-                        }
-
                     }
-
                 }
-
+            },
+            scales: {
+                x: {
+                    ticks: {
+                        color: '#cbd5e1',
+                        autoSkip: false,
+                        maxRotation: 0,
+                        callback: function(value, index) {
+                            const label = labels[index];
+                            if (label?.endsWith('00z')) return label.split(' ')[0];
+                            return '';
+                        }
+                    },
+                    grid: { color: 'rgba(148,163,184,.15)' }
+                },
+                y: {
+                    min: yMin,
+                    max: yMax,
+                    ticks: { color: '#cbd5e1' },
+                    title: { display: true, text: `${config.name} (${config.unit})`, color: '#cbd5e1' },
+                    grid: { color: 'rgba(148,163,184,.10)' }
+                }
             }
-
-        );
+        }
+    });
 
 }
 
@@ -1600,110 +833,35 @@ function updateChart(
    INITIAL CHART
 ========================================================= */
 
-document.addEventListener(
-    'DOMContentLoaded',
-    function() {
+document.addEventListener('DOMContentLoaded', function() {
 
-        chart =
-            new Chart(
-                document
-                    .getElementById(
-                        'forecastChart'
-                    )
-                    .getContext('2d'),
+    chart = new Chart(document.getElementById('forecastChart').getContext('2d'), {
+        type: 'line',
+        data: {
+            labels: ['Day 1', 'Day 2', 'Day 3', 'Day 4'],
+            datasets: [{
+                label: 'Click Update',
+                data: [null, null, null, null],
+                borderColor: '#475569',
+                borderWidth: 2,
+                tension: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                title: { display: true, text: 'Click "Update" to load ECMWF AIFS data', color: '#cbd5e1' }
+            },
+            scales: {
+                x: { ticks: { color: '#cbd5e1' } },
+                y: { ticks: { color: '#cbd5e1' } }
+            }
+        }
+    });
 
-                {
-
-                    type: 'line',
-
-                    data: {
-
-                        labels: [
-                            'Day 1',
-                            'Day 2',
-                            'Day 3',
-                            'Day 4'
-                        ],
-
-                        datasets: [{
-
-                            label:
-                                'Click Update',
-
-                            data: [
-                                null,
-                                null,
-                                null,
-                                null
-                            ],
-
-                            borderColor:
-                                '#475569',
-
-                            borderWidth: 2,
-
-                            tension: 0
-
-                        }]
-
-                    },
-
-                    options: {
-
-                        responsive: true,
-
-                        maintainAspectRatio: false,
-
-                        plugins: {
-
-                            legend: {
-                                display: false
-                            },
-
-                            title: {
-
-                                display: true,
-
-                                text:
-                                    'Click "Update" to load ECMWF AIFS data',
-
-                                color:
-                                    '#cbd5e1'
-
-                            }
-
-                        },
-
-                        scales: {
-
-                            x: {
-
-                                ticks: {
-                                    color:
-                                        '#cbd5e1'
-                                }
-
-                            },
-
-                            y: {
-
-                                ticks: {
-                                    color:
-                                        '#cbd5e1'
-                                }
-
-                            }
-
-                        }
-
-                    }
-
-                }
-
-            );
-
-    }
-);
+});
 
 </script>
 
